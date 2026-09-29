@@ -113,9 +113,8 @@ export function movePlayer(p, dt, hasBall) {
   else if (p.speed > 0.6) { fx = p.vx; fz = p.vz; }
   if (fx !== undefined && (fx * fx + fz * fz) > 1e-4) {
     const target = Math.atan2(fx, fz);
-    let diff = target - p.facing;
-    while (diff > Math.PI) diff -= 2 * Math.PI;
-    while (diff < -Math.PI) diff += 2 * Math.PI;
+    const TAU = 2 * Math.PI;
+    const diff = ((((target - p.facing + Math.PI) % TAU) + TAU) % TAU) - Math.PI;
     const turn = 9 * dt;
     p.facing += clamp(diff, -turn, turn);
   }

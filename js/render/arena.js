@@ -25,8 +25,10 @@ function courtTexture(homeTeam, awayTeam) {
     const row = Math.round(py / plankW);
     let px = -((row * 97) % 300);
     while (px < c.width) {
-      const len = 120 + ((row * 31 + px) % 180);
-      const shade = 168 + ((row * 13 + Math.floor(px)) % 22);
+      // Keep both terms non-negative: px starts negative, and a negative
+      // plank length would loop forever.
+      const len = 120 + ((((row * 31 + Math.floor(px)) % 180) + 180) % 180);
+      const shade = 168 + ((((row * 13 + Math.floor(px)) % 22) + 22) % 22);
       g.fillStyle = `rgb(${shade + 40},${shade - 10},${shade - 70})`;
       g.fillRect(px, py, len - 1, plankW - 1);
       px += len;
