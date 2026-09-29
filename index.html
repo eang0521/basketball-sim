@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Hardwood Sim</title>
+  <meta name="description" content="A 5-on-5 basketball simulation with rated players, a simple physics engine and automatic play, built with Three.js." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏀</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div id="app">
+    <canvas id="view"></canvas>
+
+    <div id="scorebug" class="hidden">
+      <div class="sb-team" id="sb-home">
+        <span class="sb-swatch"></span>
+        <span class="sb-abbr"></span>
+        <span class="sb-score">0</span>
+        <span class="sb-meta"><span class="sb-fouls"></span><span class="sb-tos"></span></span>
+      </div>
+      <div class="sb-center">
+        <div class="sb-period">Q1</div>
+        <div class="sb-clock">12:00</div>
+        <div class="sb-shot">24</div>
+      </div>
+      <div class="sb-team away" id="sb-away">
+        <span class="sb-score">0</span>
+        <span class="sb-abbr"></span>
+        <span class="sb-swatch"></span>
+        <span class="sb-meta"><span class="sb-fouls"></span><span class="sb-tos"></span></span>
+      </div>
+    </div>
+    <div id="banner" class="hidden"></div>
+    <div id="ticker" class="hidden"></div>
+
+    <aside id="panel" class="hidden">
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="box" role="tab">Box Score</button>
+        <button class="tab" data-tab="pbp" role="tab">Play-by-Play</button>
+        <button class="icon-btn" id="panel-toggle" title="Hide panel" aria-label="Hide panel">⟩</button>
+      </div>
+      <div class="tab-body" id="tab-box"></div>
+      <div class="tab-body hidden" id="tab-pbp"><ol id="pbp"></ol></div>
+    </aside>
+    <button id="panel-open" class="hidden" title="Show stats panel">⟨ Stats</button>
+
+    <div id="inspector" class="hidden"></div>
+
+    <div id="controls" class="hidden">
+      <button id="btn-play" class="ctl" title="Pause (Space)">❚❚</button>
+      <div class="seg" id="speeds">
+        <button data-speed="1" class="active">1×</button>
+        <button data-speed="2">2×</button>
+        <button data-speed="4">4×</button>
+        <button data-speed="8">8×</button>
+      </div>
+      <button id="btn-simend" class="ctl text">Sim to End</button>
+      <label class="select-wrap" title="Camera (C)">
+        <span>Camera</span>
+        <select id="camera-select"></select>
+      </label>
+      <label class="toggle"><input type="checkbox" id="labels-toggle" checked /> Numbers</label>
+      <button id="btn-new" class="ctl text">New Game</button>
+    </div>
+
+    <div id="loading">
+      <div class="ball-spin">🏀</div>
+      <div id="loading-text">Loading players…</div>
+    </div>
+
+    <div id="setup" class="modal hidden">
+      <div class="modal-card setup-card">
+        <h1>Hardwood Sim</h1>
+        <p class="sub">Pick two teams and watch them play. Every player's ratings drive their decisions, their movement and the physics of every shot.</p>
+        <div class="matchup">
+          <div class="team-pick" data-side="0">
+            <div class="pick-label">Home</div>
+            <select class="team-select"></select>
+            <div class="team-preview"></div>
+            <button class="ghost edit-btn">Edit roster</button>
+          </div>
+          <div class="vs">VS</div>
+          <div class="team-pick" data-side="1">
+            <div class="pick-label">Away</div>
+            <select class="team-select"></select>
+            <div class="team-preview"></div>
+            <button class="ghost edit-btn">Edit roster</button>
+          </div>
+        </div>
+        <div class="setup-row">
+          <label>Quarter length
+            <select id="quarter-len">
+              <option value="720" selected>12 min (NBA)</option>
+              <option value="360">6 min</option>
+              <option value="180">3 min</option>
+              <option value="60">1 min</option>
+            </select>
+          </label>
+          <label>Seed <input id="seed-input" type="text" placeholder="random" size="10" /></label>
+        </div>
+        <div class="setup-actions">
+          <button id="btn-start" class="primary">Tip Off</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="editor" class="modal hidden">
+      <div class="modal-card editor-card">
+        <div class="editor-head">
+          <input id="ed-name" class="ed-title" aria-label="Team name" />
+          <input id="ed-abbr" class="ed-abbr" maxlength="4" aria-label="Abbreviation" />
+          <label class="color-in">Primary <input type="color" id="ed-primary" /></label>
+          <label class="color-in">Secondary <input type="color" id="ed-secondary" /></label>
+        </div>
+        <p class="hint">Ratings run 25–99 (about 70 is league average). The first five rows are the starters. Height is in cm.</p>
+        <div class="table-wrap"><table id="ed-table"></table></div>
+        <div class="editor-actions">
+          <button id="ed-import" class="ghost">Import JSON</button>
+          <button id="ed-export" class="ghost">Export JSON</button>
+          <button id="ed-reset" class="ghost danger">Reset to preset</button>
+          <span class="spacer"></span>
+          <button id="ed-cancel" class="ghost">Cancel</button>
+          <button id="ed-save" class="primary">Save team</button>
+        </div>
+        <input type="file" id="ed-file" accept="application/json,.json" hidden />
+      </div>
+    </div>
+  </div>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+{
+  "name": "basketball-sim",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "simtest": "node tools/simtest.js"
+  }
+}
